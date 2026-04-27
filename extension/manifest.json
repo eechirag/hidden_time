@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "Hidden Time",
+  "short_name": "Hidden Time",
+  "version": "1.0.0",
+  "description": "Watch movies together on Netflix, YouTube, SonyLiv, Zee5, JioHotstar, JioCinema and Prime Video with synced playback plus video, voice and audio calls.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Open Hidden Time",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "tabs",
+    "sidePanel",
+    "storage",
+    "scripting"
+  ],
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "host_permissions": [
+    "https://*.netflix.com/*",
+    "https://*.youtube.com/*",
+    "https://*.sonyliv.com/*",
+    "https://*.zee5.com/*",
+    "https://*.hotstar.com/*",
+    "https://*.jiocinema.com/*",
+    "https://*.jiohotstar.com/*",
+    "https://*.primevideo.com/*",
+    "https://www.amazon.com/gp/video/*",
+    "https://www.amazon.in/gp/video/*",
+    "https://www.amazon.co.uk/gp/video/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.netflix.com/*",
+        "https://*.youtube.com/*",
+        "https://*.sonyliv.com/*",
+        "https://*.zee5.com/*",
+        "https://*.hotstar.com/*",
+        "https://*.jiocinema.com/*",
+        "https://*.jiohotstar.com/*",
+        "https://*.primevideo.com/*",
+        "https://www.amazon.com/gp/video/*",
+        "https://www.amazon.in/gp/video/*",
+        "https://www.amazon.co.uk/gp/video/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html", "lib/peerjs.min.js", "page-context.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

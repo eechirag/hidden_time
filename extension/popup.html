@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hidden Time</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Hidden Time</h1>
+      <span id="header-code" class="header-code hidden" title="Click to copy room code"></span>
+      <div class="header-actions">
+        <button id="btn-settings" class="ghost small icon-only" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <span id="connection-dot" class="dot dot--idle" title="Disconnected"></span>
+      </div>
+    </header>
+
+    <section id="settings-panel" class="panel hidden">
+      <div class="settings-header">
+        <h2>Settings</h2>
+        <button id="btn-settings-close" class="ghost small">Done</button>
+      </div>
+
+      <div class="field">
+        <label class="label">Signalling host</label>
+        <input id="s-signal-host" type="text" placeholder="0.peerjs.com" autocomplete="off" />
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1">
+          <label class="label">Port</label>
+          <input id="s-signal-port" type="number" min="1" max="65535" placeholder="443" />
+        </div>
+        <div class="field" style="flex:2">
+          <label class="label">Path</label>
+          <input id="s-signal-path" type="text" placeholder="/" autocomplete="off" />
+        </div>
+      </div>
+      <div class="row">
+        <label class="checkbox">
+          <input id="s-signal-secure" type="checkbox" checked />
+          <span>Secure (HTTPS / WSS)</span>
+        </label>
+      </div>
+
+      <div class="divider"><span>TURN relay</span></div>
+
+      <div class="field">
+        <label class="label">TURN URL</label>
+        <input id="s-turn-url" type="text" placeholder="turns:your-coturn.example.com:443" autocomplete="off" />
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1">
+          <label class="label">User</label>
+          <input id="s-turn-user" type="text" autocomplete="off" />
+        </div>
+        <div class="field" style="flex:1">
+          <label class="label">Password</label>
+          <input id="s-turn-pass" type="password" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="divider"><span>Playback</span></div>
+
+      <div class="row">
+        <label class="checkbox">
+          <input id="s-host-authority" type="checkbox" />
+          <span>Host-only controls (guest requests, host decides)</span>
+        </label>
+      </div>
+      <div class="row">
+        <label class="checkbox">
+          <input id="s-show-stats" type="checkbox" />
+          <span>Show call stats (RTT / loss / bitrate)</span>
+        </label>
+      </div>
+
+      <div class="settings-actions">
+        <button id="btn-settings-save" class="primary">Save</button>
+        <button id="btn-settings-reset" class="ghost">Reset to defaults</button>
+      </div>
+      <p class="hint">Leave fields blank to use the free public PeerJS cloud + Open Relay TURN. On Indian ISPs (Jio / Airtel CGNAT) a free <a href="https://www.metered.ca/" target="_blank" rel="noopener">Metered.ca</a> account (50&nbsp;GB/mo) gives you a much more reliable <code>turns:</code> URL — paste it above and it'll be tried first.</p>
+    </section>
+
+    <div id="perm-bar" class="perm-bar">
+      <div class="perm-item" title="Microphone permission">
+        <span class="perm-label">Mic</span>
+        <span id="perm-mic-dot" class="perm-dot" data-state="unknown"></span>
+      </div>
+      <div class="perm-item" title="Camera permission">
+        <span class="perm-label">Cam</span>
+        <span id="perm-cam-dot" class="perm-dot" data-state="unknown"></span>
+      </div>
+      <button id="btn-test-devices" class="ghost small" title="Preview your mic + camera">Test</button>
+      <button id="btn-grant" class="ghost small">Grant access</button>
+    </div>
+
+    <div id="access-help" class="access-help hidden">
+      <p class="access-title">Camera &amp; microphone blocked</p>
+      <ol class="access-steps">
+        <li>Click <strong>Open Chrome settings</strong> below — it opens Hidden Time's permissions page.</li>
+        <li>On that page, set both <strong>Camera</strong> and <strong>Microphone</strong> to <em>Allow</em>.</li>
+        <li>Come back here and click <strong>Check now</strong>.</li>
+      </ol>
+      <div class="access-actions">
+        <button id="btn-open-settings" class="primary small">Open Chrome settings</button>
+        <button id="btn-check-perms" class="ghost small">Check now</button>
+        <button id="btn-open-in-tab" class="ghost small" title="Open Hidden Time in a full tab — prompts are more reliable there">Open in tab</button>
+      </div>
+      <p class="access-fallback">
+        <strong>If nothing happens when you click Grant:</strong> the permission prompt appears in your main browser's URL bar (not in this panel). If you missed it, use <em>Open in tab</em> above or reload the extension at <code>chrome://extensions</code>.
+      </p>
+      <p class="access-fallback">Manual fallback: paste <code id="settings-url-text">chrome://settings/content/camera</code> into a new tab and change Hidden Time's entry to Allow.</p>
+    </div>
+
+    <div id="setup-preview" class="setup-preview hidden">
+      <div class="setup-preview-tile">
+        <video id="setup-cam-preview" autoplay muted playsinline></video>
+        <div class="setup-meter">
+          <span id="setup-mic-fill" class="setup-meter-fill"></span>
+        </div>
+      </div>
+      <div class="setup-preview-hint">This is what your partner will see and hear. Speak to check your mic level.</div>
+    </div>
+
+    <div id="device-picker" class="device-picker">
+      <div class="device-row">
+        <label for="mic-select" class="device-label">Mic</label>
+        <select id="mic-select" class="device-select" title="Microphone device">
+          <option value="">System default</option>
+        </select>
+      </div>
+      <div class="device-row">
+        <label for="cam-select" class="device-label">Cam</label>
+        <select id="cam-select" class="device-select" title="Camera device">
+          <option value="">System default</option>
+        </select>
+      </div>
+    </div>
+
+    <section id="room-panel" class="panel">
+      <p class="hint">Create a room and share the code, or join a friend's room.</p>
+
+      <div class="field">
+        <label for="display-name" class="label">Your name</label>
+        <input id="display-name" type="text"
+               placeholder="Optional — we'll pick one for you"
+               maxlength="24" autocomplete="off" />
+      </div>
+
+      <button id="btn-create" class="primary">Create room</button>
+      <div class="divider"><span>or</span></div>
+      <div class="row">
+        <input id="join-code" type="text" placeholder="Enter room code" autocomplete="off" />
+        <button id="btn-join">Join</button>
+      </div>
+    </section>
+
+    <section id="session-panel" class="panel hidden">
+      <div id="partner-banner" class="partner-banner hidden">
+        <div class="pb-label">Partner is watching</div>
+        <div id="pb-title" class="pb-title">—</div>
+        <div id="pb-platform" class="pb-platform"></div>
+        <div class="pb-row">
+          <button id="btn-open-partner" class="primary">Open</button>
+          <span id="pb-hint" class="pb-hint"></span>
+        </div>
+      </div>
+
+      <div id="now-playing" class="now-playing hidden">
+        <div class="np-label">Now playing</div>
+        <div id="np-title" class="np-title"></div>
+      </div>
+
+      <div class="peers-row">
+        <div id="local-tile" class="tile">
+          <video id="local-video" autoplay muted playsinline></video>
+          <div class="tile-label">You</div>
+          <button class="tile-expand" data-target="local-video" title="Full screen" aria-label="Full screen">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </button>
+          <div id="mic-meter" class="mic-meter" aria-label="Microphone level">
+            <span id="mic-meter-fill" class="mic-meter-fill"></span>
+          </div>
+        </div>
+        <div id="remote-tile" class="tile">
+          <video id="remote-video" autoplay playsinline></video>
+          <div class="tile-label">Partner</div>
+          <button class="tile-expand" data-target="remote-video" title="Full screen" aria-label="Full screen">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-mic" class="icon-btn" title="Microphone — turn on to speak with your partner">
+          <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+          <span>Mic</span>
+        </button>
+        <button id="btn-cam" class="icon-btn" title="Camera — turn on to video-call your partner">
+          <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <span>Cam</span>
+        </button>
+        <button id="btn-devices" class="icon-btn compact" title="Change microphone or camera" aria-label="Device settings">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+      <div id="device-picker-host" class="device-picker-host"></div>
+
+      <div class="watch-row">
+        <div class="label">Watching</div>
+        <select id="tab-select">
+          <option value="">— pick a streaming tab —</option>
+        </select>
+        <button id="btn-refresh-tabs" class="ghost small icon-only" title="Refresh" aria-label="Refresh">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
+        </button>
+      </div>
+      <div id="watch-status" class="watch-status">No tab selected.</div>
+
+      <button id="btn-sync-play" class="primary sync-play-btn hidden" title="Both of you play from exactly the same moment after a 3…2…1 countdown">
+        <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+        <span>Start together</span>
+      </button>
+
+      <div id="countdown-overlay" class="countdown-overlay hidden">
+        <div class="countdown-label">STARTING TOGETHER</div>
+        <div id="countdown-number" class="countdown-number">3</div>
+      </div>
+
+      <div class="chat">
+        <div id="chat-log" class="chat-log"></div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" type="text" placeholder="Message…" autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+      </div>
+
+      <div class="room-bar compact">
+        <span class="rb-code-label">Code</span>
+        <strong id="room-code" class="room-code">—</strong>
+        <span id="peer-status" class="peer-status">Waiting for partner…</span>
+        <span class="rb-spacer"></span>
+        <button id="btn-copy" class="ghost small">Copy</button>
+        <button id="btn-share-link" class="ghost small" title="Copy a one-click invite link">Share</button>
+        <button id="btn-reconnect" class="ghost small" title="Retry connection">Retry</button>
+        <button id="btn-leave" class="ghost danger small">Leave</button>
+      </div>
+    </section>
+
+    <div id="stats-row" class="stats-row hidden">
+      <span class="stat"><span class="stat-k">RTT</span><span id="stat-rtt" class="stat-v">—</span></span>
+      <span class="stat"><span class="stat-k">Loss</span><span id="stat-loss" class="stat-v">—</span></span>
+      <span class="stat"><span class="stat-k">↓</span><span id="stat-down" class="stat-v">—</span></span>
+      <span class="stat"><span class="stat-k">↑</span><span id="stat-up" class="stat-v">—</span></span>
+    </div>
+
+    <footer class="app-footer">
+      <span id="status-text">Ready.</span>
+    </footer>
+
+    <script src="lib/peerjs.min.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
